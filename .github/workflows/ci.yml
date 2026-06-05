@@ -1,0 +1,242 @@
+name: CI — norxs TSN Zonal Backbone
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ══════════════════════════════════════════════════════════════════════════
+  # Job 1 — Host Build + GoogleTest
+  # ══════════════════════════════════════════════════════════════════════════
+  build-test:
+    name: "Build + Unit Tests (x86_64)"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y cmake ninja-build libgtest-dev
+
+      - name: Configure (host)
+        run: |
+          cmake -B build-host -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DNORXS_BUILD_TESTS=ON \
+            -DNORXS_STRICT_WARNINGS=ON
+
+      - name: Build
+        run: cmake --build build-host --parallel
+
+      - name: Run unit tests
+        run: ctest --test-dir build-host -V --output-on-failure
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # Job 2 — Cross-Compile for NXP i.MX8X (aarch64)
+  # ══════════════════════════════════════════════════════════════════════════
+  cross-compile:
+    name: "Cross-compile aarch64 (i.MX8X)"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install aarch64 toolchain
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu cmake ninja-build
+
+      - name: Set toolchain env
+        run: |
+          # Override toolchain to use system aarch64 cross-compiler (no NXP SDK in CI)
+          sed -i 's|aarch64-poky-linux-|aarch64-linux-gnu-|g' cmake/Toolchain-aarch64-imx8x.cmake
+
+      - name: Configure (cross)
+        run: |
+          cmake -B build-cross -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-aarch64-imx8x.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DNORXS_BUILD_TESTS=OFF \
+            -DNORXS_STRICT_WARNINGS=ON
+
+      - name: Cross-compile
+        run: cmake --build build-cross --parallel
+
+      - name: Verify binary architecture
+        run: |
+          file build-cross/libnorxs-tsn-backbone.a
+          aarch64-linux-gnu-objdump -f build-cross/libnorxs-tsn-backbone.a | head -20
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # Job 3 — Stack Usage Analysis  (ISO 26262 Part 6 §9.4.3)
+  # ══════════════════════════════════════════════════════════════════════════
+  stack-analysis:
+    name: "Stack Usage Analysis"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu cmake ninja-build python3
+
+      - name: Build with stack-usage
+        run: |
+          sed -i 's|aarch64-poky-linux-|aarch64-linux-gnu-|g' cmake/Toolchain-aarch64-imx8x.cmake
+          cmake -B build-stack -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-aarch64-imx8x.cmake \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-stack
+
+      - name: Parse stack report
+        run: |
+          echo "═══ Stack Usage Report (all functions) ═══"
+          find build-stack -name "*.su" -exec cat {} \; | sort -t: -k3 -rn | head -50
+
+      - name: Enforce max stack depth
+        run: |
+          MAX=$(find build-stack -name "*.su" -exec cat {} \; \
+                | awk -F'\t' '{print $2}' | sort -rn | head -1)
+          echo "Maximum function stack usage: ${MAX} bytes"
+          # ASIL-D requirement: no single function > 1024 bytes
+          python3 -c "
+          import sys
+          max_stack = int('$MAX') if '$MAX' else 0
+          if max_stack > 1024:
+              print(f'FAIL: max stack {max_stack}B exceeds 1024B ASIL-D limit')
+              sys.exit(1)
+          else:
+              print(f'PASS: max stack {max_stack}B within 1024B limit')
+          "
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # Job 4 — Clang-Tidy Static Analysis
+  # ══════════════════════════════════════════════════════════════════════════
+  lint:
+    name: "Static Analysis (clang-tidy)"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-tidy
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y clang-tidy cmake ninja-build
+
+      - name: Generate compile_commands.json
+        run: |
+          cmake -B build-lint -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DNORXS_BUILD_TESTS=OFF
+
+      - name: Run clang-tidy
+        run: |
+          # Advisory: findings are logged but do not fail CI.
+          set +e
+          clang-tidy \
+            -p build-lint \
+            --checks="-*,bugprone-*,cert-*,cppcoreguidelines-*,performance-*,readability-*,\
+          -cppcoreguidelines-pro-type-reinterpret-cast,\
+          -readability-magic-numbers" \
+            src/*.cpp || true
+          echo "clang-tidy finished (advisory)."
+          exit 0
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # Job 5 — AUTOSAR Compliance Pattern Scan
+  # ══════════════════════════════════════════════════════════════════════════
+  compliance:
+    name: "AUTOSAR C++14 Compliance Scan"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for forbidden patterns
+        run: |
+          echo "Scanning for AUTOSAR C++14 violations..."
+          FAIL=0
+
+          # Strip block comments (/* ... */) and line comments (//) before scanning
+          # to avoid false positives from English words in Doxygen/comments.
+          strip_comments() {
+            cat src/*.cpp include/norxs/tsn/*.hpp 2>/dev/null \
+              | perl -0777 -pe 's{/\*.*?\*/}{}gs' \
+              | sed -e 's://.*$::'
+          }
+
+          check() {
+            local pattern="$1"
+            local desc="$2"
+            local count
+            count=$(strip_comments | grep -cE "$pattern" || true)
+            if [ "$count" -gt 0 ]; then
+              echo "FAIL ($count hits): $desc"
+              FAIL=1
+            else
+              echo "PASS: $desc"
+            fi
+          }
+
+          check 'throw\s+'                   "M15-3-1: throw statements forbidden"
+          check 'catch\s*\('                 "M15-3-1: catch blocks forbidden"
+          check '\bnew\b\s+[A-Z]'            "M18-4-1: operator new forbidden (heap allocation)"
+          check '\bmalloc\b'                 "M18-4-1: malloc forbidden"
+          check '\bcalloc\b'                 "M18-4-1: calloc forbidden"
+          check 'std::vector'                "A9-5-1: std::vector forbidden (dynamic)"
+          check 'std::list'                  "A9-5-1: std::list forbidden (dynamic)"
+          check 'std::map\b'                 "A9-5-1: std::map forbidden (dynamic)"
+          check 'std::shared_ptr'            "A20-8-1: shared_ptr forbidden"
+          check 'std::unique_ptr'            "A20-8-1: unique_ptr forbidden"
+          check '\bgoto\b'                   "M6-6-1: goto forbidden"
+          check 'float\s'                    "M6-4-1: float forbidden (use integer arithmetic)"
+          check 'double\s'                   "M6-4-1: double forbidden (use integer arithmetic)"
+
+          echo ""
+          if [ $FAIL -ne 0 ]; then
+            echo "═══ COMPLIANCE SCAN FAILED ═══"
+            exit 1
+          else
+            echo "═══ COMPLIANCE SCAN PASSED ═══"
+          fi
+
+      - name: Verify Doxygen headers on all files
+        run: |
+          echo "Checking Doxygen headers..."
+          FAIL=0
+          for f in src/*.cpp include/norxs/tsn/*.hpp; do
+            if ! grep -q "@file" "$f"; then
+              echo "FAIL: Missing @file in $f"
+              FAIL=1
+            fi
+            if ! grep -q "@brief" "$f"; then
+              echo "FAIL: Missing @brief in $f"
+              FAIL=1
+            fi
+            if ! grep -q "@standards" "$f"; then
+              echo "FAIL: Missing @standards in $f"
+              FAIL=1
+            fi
+            if ! grep -q "@copyright" "$f"; then
+              echo "FAIL: Missing @copyright in $f"
+              FAIL=1
+            fi
+          done
+          if [ $FAIL -ne 0 ]; then exit 1; fi
+          echo "All Doxygen headers present."
+
+      - name: Verify SPDX headers on all source files
+        run: |
+          echo "Checking SPDX-License-Identifier headers..."
+          FAIL=0
+          for f in src/*.cpp include/norxs/tsn/*.hpp tests/*.cpp; do
+            if ! grep -q "SPDX-License-Identifier" "$f"; then
+              echo "FAIL: Missing SPDX header in $f"
+              FAIL=1
+            fi
+          done
+          if [ $FAIL -ne 0 ]; then exit 1; fi
+          echo "All SPDX headers present."

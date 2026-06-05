@@ -1,0 +1,49 @@
+# Build directories
+build/
+build-*/
+out/
+
+# CMake generated
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+_deps/
+*.cmake
+!cmake/Toolchain-*.cmake
+
+# Compiled objects and binaries
+*.o
+*.a
+*.so
+*.elf
+*.hex
+*.bin
+*.map
+*.su
+
+# Stack usage reports
+*.su
+
+# Coverage
+*.gcno
+*.gcda
+*.gcov
+coverage.info
+coverage-report/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# Doxygen output
+docs/html/
+docs/latex/
+Doxyfile.out
