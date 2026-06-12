@@ -14,7 +14,7 @@ jobs:
     name: "Build + Unit Tests (x86_64)"
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
@@ -41,7 +41,7 @@ jobs:
     name: "Cross-compile aarch64 (i.MX8X)"
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install aarch64 toolchain
         run: |
@@ -76,7 +76,7 @@ jobs:
     name: "Stack Usage Analysis"
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install toolchain
         run: |
@@ -119,7 +119,7 @@ jobs:
     name: "Static Analysis (clang-tidy)"
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install clang-tidy
         run: |
@@ -153,7 +153,7 @@ jobs:
     name: "AUTOSAR C++14 Compliance Scan"
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Scan for forbidden patterns
         run: |
@@ -248,7 +248,7 @@ jobs:
     name: "SBOM + License Compliance (ISO/IEC 5230)"
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Validate SBOM JSON well-formedness
         run: |
@@ -301,7 +301,7 @@ jobs:
     name: "Security Scan — cppcheck (ISO/IEC 18974)"
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install cppcheck
         run: |
@@ -325,7 +325,7 @@ jobs:
     name: "API Docs (Doxygen)"
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install doxygen
         run: |
