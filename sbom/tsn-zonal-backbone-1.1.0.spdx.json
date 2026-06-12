@@ -1,0 +1,82 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "norxs-tsn-zonal-backbone-1.1.0",
+  "documentNamespace": "https://norxs.com/spdx/tsn-zonal-backbone/1.1.0",
+  "creationInfo": {
+    "created": "2026-06-12T00:00:00Z",
+    "creators": [
+      "Organization: norxs Technology LLC",
+      "Tool: norxs-sbom-manual-1.0"
+    ],
+    "licenseListVersion": "3.24"
+  },
+  "comment": "Software Bill of Materials for the norxs Deterministic TSN Zonal Backbone reference implementation. The production library has ZERO third-party runtime dependencies by design (AUTOSAR C++14: no dynamic allocation, freestanding-style use of <cstdint>/<cstddef>/<array>/<limits> only). GoogleTest is a test-time-only dependency and is never linked into the deliverable static library. This SBOM is regenerated and reviewed at every tagged release per the norxs Open Source Policy (docs/compliance/openchain-iso5230.md).",
+  "packages": [
+    {
+      "name": "norxs-tsn-zonal-backbone",
+      "SPDXID": "SPDXRef-Package-norxs-tsn",
+      "versionInfo": "1.1.0",
+      "supplier": "Organization: norxs Technology LLC",
+      "downloadLocation": "https://github.com/norxs-tech/tsn-zonal-backbone",
+      "filesAnalyzed": false,
+      "homepage": "https://norxs.com",
+      "licenseConcluded": "LicenseRef-norxs-RI-1.0",
+      "licenseDeclared": "LicenseRef-norxs-RI-1.0",
+      "copyrightText": "(c) 2026 norxs Technology LLC. All rights reserved.",
+      "primaryPackagePurpose": "LIBRARY",
+      "description": "AUTOSAR C++14 IEEE 802.1Qbv/CB/Qci/AE TSN stack with Network Calculus latency verification for NXP i.MX8X. Static library, no third-party runtime dependencies.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/norxs-tech/tsn-zonal-backbone@1.1.0"
+        }
+      ]
+    },
+    {
+      "name": "googletest",
+      "SPDXID": "SPDXRef-Package-googletest",
+      "versionInfo": ">=1.13",
+      "supplier": "Organization: Google LLC",
+      "downloadLocation": "https://github.com/google/googletest",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "Copyright 2008, Google Inc.",
+      "primaryPackagePurpose": "FRAMEWORK",
+      "description": "Unit test framework. TEST-SCOPE ONLY: linked exclusively into the norxs-tsn-tests host binary when -DNORXS_BUILD_TESTS=ON; never distributed with, or linked into, the production library.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/google/googletest"
+        }
+      ]
+    }
+  ],
+  "hasExtractedLicensingInfos": [
+    {
+      "licenseId": "LicenseRef-norxs-RI-1.0",
+      "name": "norxs Reference Implementation License v1.0",
+      "extractedText": "See LICENSES/LicenseRef-norxs-RI-1.0.txt in this repository for the complete license text. Evaluation, study, and academic use permitted; commercial use requires a separate license agreement with norxs Technology LLC.",
+      "seeAlsos": [
+        "https://github.com/norxs-tech/tsn-zonal-backbone/blob/main/LICENSE"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-norxs-tsn"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-googletest",
+      "relationshipType": "TEST_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-norxs-tsn",
+      "comment": "googletest is a build-time, test-only dependency of norxs-tsn-zonal-backbone; it is never part of the distributed artifact."
+    }
+  ]
+}

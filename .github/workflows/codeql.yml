@@ -1,0 +1,45 @@
+# CodeQL security analysis — OpenChain ISO/IEC 18974 §3.1.5 (standard practice:
+# semantic security scanning of first-party code on every change + weekly).
+name: CodeQL — norxs TSN Zonal Backbone
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: "17 3 * * 1"   # weekly Monday scan (catches new query packs)
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: "CodeQL (C/C++)"
+    runs-on: ubuntu-22.04
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: c-cpp
+          queries: security-and-quality
+
+      - name: Build production library
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y cmake ninja-build
+          cmake -B build-codeql -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DNORXS_BUILD_TESTS=OFF \
+            -DNORXS_BUILD_EXAMPLES=ON
+          cmake --build build-codeql --parallel
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:c-cpp"

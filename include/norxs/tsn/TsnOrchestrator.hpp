@@ -310,6 +310,12 @@ private:
     u64 ptpConvergenceStartNs_;
     u64 lastHealthCheckNs_;
 
+    /// PHC-independent monotonic time, derived from the Tick() contract
+    /// (caller invokes Tick() every cfg_.tickPeriodUs µs). Drives the gPTP
+    /// convergence watchdog so it can fire even while the PHC is unreadable
+    /// (PtpClockManager in kFreeRun before first sync). Resolves OBS-001.
+    u64 monotonicNs_;
+
     // Fault tracking
     u32 activeFaultMask_;    ///< Bitmask of concurrent active faults
 

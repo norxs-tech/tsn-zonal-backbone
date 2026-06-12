@@ -131,7 +131,7 @@ Status GateControlManager::VerifyHardwareSchedule() const noexcept
     {
         return Status::Err(ErrorCode::kOperationNotPermitted);
     }
-    for (u8 i = 0U; i < activeSchedule_.entryCount; ++i)
+    for (u16 i = 0U; i < activeSchedule_.entryCount; ++i)
     {
         if (verifyBuffer_.gcl[i].gateStates != activeSchedule_.gcl[i].gateStates ||
             verifyBuffer_.gcl[i].intervalNs != activeSchedule_.gcl[i].intervalNs)
@@ -193,7 +193,7 @@ Status GateControlManager::CheckCycleTime(const ScheduleParams& params) const no
 
 Status GateControlManager::CheckNoZeroIntervals(const ScheduleParams& params) const noexcept
 {
-    for (u8 i = 0U; i < params.entryCount; ++i)
+    for (u16 i = 0U; i < params.entryCount; ++i)
     {
         if (params.gcl[i].intervalNs == 0U)
             { return Status::Err(ErrorCode::kZeroIntervalEntry); }
@@ -208,7 +208,7 @@ Status GateControlManager::CheckNoZeroIntervals(const ScheduleParams& params) co
 Status GateControlManager::CheckIntervalSum(const ScheduleParams& params) const noexcept
 {
     u64 sum = 0ULL;
-    for (u8 i = 0U; i < params.entryCount; ++i)
+    for (u16 i = 0U; i < params.entryCount; ++i)
     {
         sum += static_cast<u64>(params.gcl[i].intervalNs);
     }
@@ -239,7 +239,7 @@ Status GateControlManager::CheckGuardBand(const ScheduleParams& params) const no
     const u64 guardBandNs   = FrameTransmissionNs(kMaxFrameSizeBytes);
     const u64 minWindowNs   = safetyFrameNs + guardBandNs;
 
-    for (u8 i = 0U; i < params.entryCount; ++i)
+    for (u16 i = 0U; i < params.entryCount; ++i)
     {
         if (params.gcl[i].gateStates == kSafetyOnlyOpen)
         {
@@ -262,7 +262,7 @@ Status GateControlManager::CheckGuardBand(const ScheduleParams& params) const no
 
 Status GateControlManager::CheckSafetyCriticalWindow(const ScheduleParams& params) const noexcept
 {
-    for (u8 i = 0U; i < params.entryCount; ++i)
+    for (u16 i = 0U; i < params.entryCount; ++i)
     {
         if (params.gcl[i].gateStates == kSafetyOnlyOpen)
         {
@@ -361,7 +361,7 @@ u64 GateControlManager::ComputeBlockingTimeNs(const ScheduleParams& params,
     const GateStateBitmask tcBit = static_cast<GateStateBitmask>(1U << tcIndex);
     u64 blocked = 0ULL;
 
-    for (u8 i = 0U; i < params.entryCount; ++i)
+    for (u16 i = 0U; i < params.entryCount; ++i)
     {
         // This TC is blocked if its gate bit is 0 in this interval
         if ((params.gcl[i].gateStates & tcBit) == 0U)

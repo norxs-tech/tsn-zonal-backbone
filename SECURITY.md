@@ -90,6 +90,26 @@ under our ISO/SAE 21434 CSMS obligations.
 
 ---
 
+## Security Assurance Program
+
+Vulnerability handling in this project operates under a documented
+**OpenChain ISO/IEC 18974** security assurance program — see
+[`docs/compliance/openchain-iso18974.md`](docs/compliance/openchain-iso18974.md).
+Key elements:
+
+- **SBOM:** A machine-readable SPDX 2.3 bill of materials is published at
+  [`sbom/tsn-zonal-backbone-1.1.0.spdx.json`](sbom/tsn-zonal-backbone-1.1.0.spdx.json)
+  and validated by CI on every push. The production library has **zero third-party
+  runtime dependencies** (CI-enforced), which minimises the known-vulnerability surface.
+- **Known-vulnerability monitoring:** Dependabot tracks CI toolchain components;
+  SBOM entries are reviewed against published advisories at every release.
+- **Continuous detection:** clang-tidy (`cert-*`, `bugprone-*`), cppcheck, the
+  AUTOSAR pattern gate, and bounded-stack verification run on every push.
+- **Framework alignment:** Controls are mapped to **NIST CSF 2.0** in
+  [`docs/compliance/nist-csf-mapping.md`](docs/compliance/nist-csf-mapping.md).
+
+---
+
 ## Security Architecture Reference
 
 The security design of this stack covers the following UN R155 attack surfaces:

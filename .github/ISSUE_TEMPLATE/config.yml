@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability (private)
+    url: https://github.com/norxs-tech/tsn-zonal-backbone/security/advisories/new
+    about: "NEVER report vulnerabilities in public issues — see SECURITY.md."
+  - name: Commercial licensing & safety evidence package
+    url: https://norxs.com/contact
+    about: Production source rights, ISO 26262 evidence, HAL implementations.

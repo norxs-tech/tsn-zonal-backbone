@@ -56,6 +56,7 @@ TsnOrchestrator::TsnOrchestrator(SwitchHal& hal) noexcept
     , gcmCount_              { 0U }
     , ptpConvergenceStartNs_ { 0ULL }
     , lastHealthCheckNs_     { 0ULL }
+    , monotonicNs_           { 0ULL }
     , activeFaultMask_       { 0U }
     , auditLog_              {}
     , auditHead_             { 0U }
@@ -74,6 +75,18 @@ TsnOrchestrator::TsnOrchestrator(SwitchHal& hal) noexcept
 
 Status TsnOrchestrator::Init(const OrchestratorConfig& cfg) noexcept
 {
+    // Phase 0: semantic configuration validation (fail before touching hardware)
+    if (cfg.tickPeriodUs == 0U)
+    {
+        // The monotonic watchdog clock is derived from the tick period;
+        // a zero period would disable the convergence watchdog entirely.
+        return Status::Err(ErrorCode::kInvalidArgument);
+    }
+    if (cfg.schedulePortCount > static_cast<u8>(kMaxSwitchPorts))
+    {
+        return Status::Err(ErrorCode::kInvalidArgument);
+    }
+
     cfg_ = cfg;
 
     // Phase 1: HAL chip initialisation
@@ -167,14 +180,18 @@ Status TsnOrchestrator::PrevalidateAllSchedules() noexcept
         const ScheduleParams& p = cfg_.schedules[i];
 
         // Minimal inline checks matching Stages 1–5
-        if (p.entryCount == 0U || p.entryCount > static_cast<u8>(kMaxGclEntries))
+        // NOTE: widen entryCount to std::size_t for the comparison.
+        // (A previous revision narrowed kMaxGclEntries (256) to u8, which
+        // truncates to 0 and rejected every non-empty schedule.)
+        if (p.entryCount == 0U ||
+            static_cast<std::size_t>(p.entryCount) > kMaxGclEntries)
             { return Status::Err(ErrorCode::kGclEmpty); }
         if (p.cycleTimeNs < kMinCycleTimeNs || p.cycleTimeNs > kMaxCycleTimeNs)
             { return Status::Err(ErrorCode::kCycleTimeTooShort); }
 
         u64 sum = 0ULL;
         bool hasSafetyWindow = false;
-        for (u8 j = 0U; j < p.entryCount; ++j)
+        for (u16 j = 0U; j < p.entryCount; ++j)
         {
             if (p.gcl[j].intervalNs == 0U)
                 { return Status::Err(ErrorCode::kZeroIntervalEntry); }
@@ -232,6 +249,11 @@ Status TsnOrchestrator::Tick() noexcept
     (void)ptpManager_.GetCurrentTime(now);
     const u64 nowNs = now.seconds * kNsPerSecond + static_cast<u64>(now.nanoseconds);
 
+    // PHC-independent monotonic time, advanced by the Tick() period contract.
+    // Required because GetCurrentTime() fails while the PHC is in kFreeRun
+    // (slave before first sync) — the convergence watchdog must still run.
+    monotonicNs_ += static_cast<u64>(cfg_.tickPeriodUs) * 1'000ULL;
+
     // ── a) gPTP clock tick ────────────────────────────────────────────────
     TSN_RETURN_IF_ERR(TickPtp());
 
@@ -279,8 +301,8 @@ Status TsnOrchestrator::Tick() noexcept
         else
         {
             // Check convergence timeout
-            if (ptpConvergenceStartNs_ == 0ULL) { ptpConvergenceStartNs_ = nowNs; }
-            const u64 elapsedMs = (nowNs - ptpConvergenceStartNs_) / 1'000'000ULL;
+            if (ptpConvergenceStartNs_ == 0ULL) { ptpConvergenceStartNs_ = monotonicNs_; }
+            const u64 elapsedMs = (monotonicNs_ - ptpConvergenceStartNs_) / 1'000'000ULL;
             if (elapsedMs > static_cast<u64>(cfg_.ptpConvergenceTimeoutMs))
             {
                 (void)EnterFault(ErrorCode::kPtpNotSynchronised);
@@ -375,6 +397,21 @@ Status TsnOrchestrator::TickDegradationMachine() noexcept
 
         LogStateTransition(state_, OrchestratorState::kDegraded, trigger, 0U, nowNs);
         state_ = OrchestratorState::kDegraded;
+        return Status::Ok();
+    }
+
+    // ── kDegraded → kSafeState escalation ────────────────────────────────
+    // The Network Calculus WCD guarantees are proven against the *validated*
+    // schedule. If the hardware-schedule integrity fault persists while
+    // degraded, the operative GCL no longer matches the validated one and the
+    // ASIL-D deadline can no longer be guaranteed — escalate to the safe
+    // state (TC7-exclusive schedule) per the documented FSM
+    // (kDegraded → kSafeState on kSafetyDeadlineNs risk).
+    if (state_ == OrchestratorState::kDegraded &&
+        (activeFaultMask_ & kFaultHalIntegrity) != 0U)
+    {
+        activeFaultMask_ |= kFaultNcDeadline;
+        return EnterSafeState(ErrorCode::kDeadlineViolation);
     }
 
     return Status::Ok();
@@ -501,6 +538,17 @@ Status TsnOrchestrator::GetHealthMetrics(i64& outPtpOffsetNs,
 
     outDropTotal = 0ULL;
     outMacsecFails = 0ULL;
+
+    // Aggregate per-stream drop counters (802.1Qci policing) across all
+    // configured stream filters, per the documented contract of this method.
+    for (u8 f = 0U; f < cfg_.streamFilterCount; ++f)
+    {
+        u64 drops = 0ULL;
+        if (hal_.GetStreamDropCount(cfg_.streamFilters[f].streamHandle, drops).IsOk())
+        {
+            outDropTotal += drops;
+        }
+    }
 
     for (u8 ch = 0U; ch < static_cast<u8>(kMaxSecureChannels); ++ch)
     {

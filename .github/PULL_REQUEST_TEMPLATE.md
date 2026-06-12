@@ -66,7 +66,18 @@ Closes #
 - [ ] New tests added for all changed decision points
 - [ ] MC/DC coverage achieved on all new branches
 - [ ] `MockSwitchHal` failure injection tested for all new HAL calls
-- [ ] CI Jobs 1–5 all passing (link to Actions run):
+- [ ] CI Jobs 1–8 + CodeQL all passing (link to Actions run):
+
+---
+
+## License & Security Compliance (OpenChain ISO/IEC 5230 · ISO/IEC 18974)
+
+- [ ] All new/modified files carry the `SPDX-License-Identifier` header
+- [ ] No third-party code introduced into the production library
+      (or: OSPO approval obtained and SBOM updated — link approval)
+- [ ] `sbom/` updated if any build/test dependency changed
+- [ ] I have read [`SECURITY.md`](../SECURITY.md) and this change introduces no
+      new attack surface, **or** the new surface is documented there
 
 ---
 

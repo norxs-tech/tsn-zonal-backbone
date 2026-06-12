@@ -240,3 +240,113 @@ jobs:
           done
           if [ $FAIL -ne 0 ]; then exit 1; fi
           echo "All SPDX headers present."
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # Job 6 — SBOM & License Compliance  (OpenChain ISO/IEC 5230 §3.3)
+  # ══════════════════════════════════════════════════════════════════════════
+  sbom-license:
+    name: "SBOM + License Compliance (ISO/IEC 5230)"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate SBOM JSON well-formedness
+        run: |
+          python3 -c "
+          import json, sys
+          with open('sbom/tsn-zonal-backbone-1.1.0.spdx.json') as f:
+              doc = json.load(f)
+          assert doc['spdxVersion'].startswith('SPDX-2'), 'not SPDX 2.x'
+          assert any(p['SPDXID'] == 'SPDXRef-Package-norxs-tsn'
+                     for p in doc['packages']), 'primary package missing'
+          print('SBOM valid:', doc['name'])
+          "
+
+      - name: Verify SBOM version matches project version
+        run: |
+          PROJ_VER=$(grep -E 'VERSION\s+[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          SBOM_VER=$(python3 -c "import json; print(json.load(open('sbom/tsn-zonal-backbone-1.1.0.spdx.json'))['packages'][0]['versionInfo'])")
+          echo "Project: $PROJ_VER — SBOM: $SBOM_VER"
+          test "$PROJ_VER" = "$SBOM_VER" || { echo "FAIL: SBOM out of date"; exit 1; }
+
+      - name: Verify license compliance artifacts present
+        run: |
+          for f in LICENSE NOTICE LICENSES/LicenseRef-norxs-RI-1.0.txt \
+                   docs/compliance/openchain-iso5230.md \
+                   docs/compliance/openchain-iso18974.md \
+                   docs/compliance/nist-csf-mapping.md; do
+            test -f "$f" || { echo "FAIL: missing $f"; exit 1; }
+            echo "PASS: $f"
+          done
+
+      - name: Verify zero third-party includes in production code
+        run: |
+          # AUTOSAR profile permits only these stdlib headers in src/ + include/
+          # (cstring: memcmp/memcpy on fixed-size buffers only — no allocation)
+          ALLOWED='cstdint|cstddef|array|limits|new|cstring'
+          BAD=$(grep -hoE '#include <[^>]+>' src/*.cpp include/norxs/tsn/*.hpp \
+                | sed 's/#include <//; s/>//' \
+                | grep -vE "^(${ALLOWED})$" || true)
+          if [ -n "$BAD" ]; then
+            echo "FAIL: unexpected external includes in production code:"
+            echo "$BAD"
+            exit 1
+          fi
+          echo "PASS: production library has zero third-party runtime includes."
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # Job 7 — Security Static Analysis  (OpenChain ISO/IEC 18974 §3.1.5)
+  # ══════════════════════════════════════════════════════════════════════════
+  security-scan:
+    name: "Security Scan — cppcheck (ISO/IEC 18974)"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck (errors are blocking)
+        run: |
+          cppcheck --std=c++14 --language=c++ \
+            --enable=warning,portability,performance \
+            --inline-suppr \
+            --error-exitcode=1 \
+            -I include \
+            src/ include/
+          echo "cppcheck: no blocking findings."
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # Job 8 — API Documentation Build  (Doxygen — fails on undocumented API)
+  # ══════════════════════════════════════════════════════════════════════════
+  docs:
+    name: "API Docs (Doxygen)"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install doxygen
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y doxygen graphviz
+
+      - name: Build API documentation
+        run: |
+          doxygen Doxyfile 2> doxygen-warnings.log || true
+          echo "── Doxygen warnings ──"
+          cat doxygen-warnings.log
+          # Block on documentation warnings for the public API
+          if grep -E "warning: .*(is not documented|no matching|undocumented)" doxygen-warnings.log; then
+            echo "FAIL: undocumented public API"
+            exit 1
+          fi
+          echo "PASS: API documentation complete."
+
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-docs
+          path: docs/doxygen/html/
+          retention-days: 30

@@ -304,3 +304,92 @@ TEST_F(PtpTest, GetMeanPathDelay_InitiallyZero)
     ASSERT_TRUE(ptp.Init(MakeValidConfig()).IsOk());
     EXPECT_EQ(ptp.GetMeanPathDelayNs(), 0);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Holdover Runtime Path  (ASIL-D timing continuity through grandmaster loss)
+// ─────────────────────────────────────────────────────────────────────────────
+
+TEST_F(PtpTest, Tick_SyncSilenceBeyondTimeout_EntersHoldover)
+{
+    ASSERT_TRUE(ptp.Init(MakeValidConfig()).IsOk());
+    // Lock: two syncs, second within 1 µs target. lastSyncNs = 2.0000005 s
+    ptp.InjectSyncMessage(2'000'005'000ULL, 2'000'000'000ULL, 0LL);
+    ptp.InjectSyncMessage(2'000'000'500ULL, 2'000'000'000ULL, 0LL);
+    ASSERT_EQ(ptp.GetSyncState(), SyncState::kLocked);
+
+    // Advance PHC past lastSync + syncTimeout (10 ms): 2.1 s
+    hal.phcSecLow = 2U;
+    hal.phcNs     = 100'000'000U;
+    ASSERT_TRUE(ptp.Tick().IsOk());
+    EXPECT_EQ(ptp.GetSyncState(), SyncState::kHoldover);
+}
+
+TEST_F(PtpTest, Tick_InHoldover_AppliesDriftCompensationWrite)
+{
+    ASSERT_TRUE(ptp.Init(MakeValidConfig()).IsOk());
+    ptp.InjectSyncMessage(2'000'005'000ULL, 2'000'000'000ULL, 0LL);
+    ptp.InjectSyncMessage(2'000'000'500ULL, 2'000'000'000ULL, 0LL);
+    // Detect GM silence early (12 ms > 10 ms timeout) → holdover.
+    // Holdover elapsed time is measured from lastSync (t ≈ 2.0000005 s).
+    hal.phcSecLow = 2U;  hal.phcNs = 12'000'000U;
+    ASSERT_TRUE(ptp.Tick().IsOk());
+    ASSERT_EQ(ptp.GetSyncState(), SyncState::kHoldover);
+
+    // Next tick at +50 ms since lastSync: inside the 100 ms budget and below
+    // the 10× GM-lost threshold → drift compensation must write the PHC.
+    hal.phcNs = 50'000'000U;
+    const u32 before = hal.writeCallCount;
+    ASSERT_TRUE(ptp.Tick().IsOk());
+    EXPECT_GT(hal.writeCallCount, before);
+    EXPECT_EQ(ptp.GetSyncState(), SyncState::kHoldover);
+    EXPECT_GT(ptp.GetHoldoverRemainingNs(), 0ULL);
+}
+
+TEST_F(PtpTest, Tick_HoldoverBudgetExpired_FreeRunWithError)
+{
+    ASSERT_TRUE(ptp.Init(MakeValidConfig()).IsOk());
+    ptp.InjectSyncMessage(2'000'005'000ULL, 2'000'000'000ULL, 0LL);
+    ptp.InjectSyncMessage(2'000'000'500ULL, 2'000'000'000ULL, 0LL);
+    hal.phcSecLow = 2U;  hal.phcNs = 100'000'000U;   // → holdover
+    ASSERT_TRUE(ptp.Tick().IsOk());
+
+    // Exceed the 100 ms holdover budget (elapsed since lastSync ≈ 300 ms)
+    hal.phcNs = 300'000'000U;
+    const Status s = ptp.Tick();
+    ASSERT_TRUE(s.IsError());
+    EXPECT_EQ(s.Error(), ErrorCode::kPtpHoldoverExpired);
+    EXPECT_EQ(ptp.GetSyncState(), SyncState::kFreeRun);
+    EXPECT_FALSE(ptp.IsSynchronised());
+}
+
+TEST_F(PtpTest, Tick_HoldoverGmSilenceTenfoldTimeout_ReportsExpired)
+{
+    // Large budget so the 10× sync-timeout GM-lost branch fires first.
+    PtpConfig cfg = MakeValidConfig();
+    cfg.holdoverBudgetNs = 10'000'000'000ULL;        // 10 s budget
+    ASSERT_TRUE(ptp.Init(cfg).IsOk());
+    ptp.InjectSyncMessage(2'000'005'000ULL, 2'000'000'000ULL, 0LL);
+    ptp.InjectSyncMessage(2'000'000'500ULL, 2'000'000'000ULL, 0LL);
+    hal.phcSecLow = 2U;  hal.phcNs = 100'000'000U;   // → holdover
+    ASSERT_TRUE(ptp.Tick().IsOk());
+
+    // Silence > 10 × 10 ms = 100 ms while budget (10 s) still has headroom
+    hal.phcNs = 200'000'001U;
+    const Status s = ptp.Tick();
+    ASSERT_TRUE(s.IsError());
+    EXPECT_EQ(s.Error(), ErrorCode::kPtpHoldoverExpired);
+}
+
+TEST_F(PtpTest, Tick_ReSyncDuringHoldover_RecoversTowardsLock)
+{
+    ASSERT_TRUE(ptp.Init(MakeValidConfig()).IsOk());
+    ptp.InjectSyncMessage(2'000'005'000ULL, 2'000'000'000ULL, 0LL);
+    ptp.InjectSyncMessage(2'000'000'500ULL, 2'000'000'000ULL, 0LL);
+    hal.phcSecLow = 2U;  hal.phcNs = 100'000'000U;
+    ASSERT_TRUE(ptp.Tick().IsOk());
+    ASSERT_EQ(ptp.GetSyncState(), SyncState::kHoldover);
+
+    // Grandmaster returns: a new Sync exits holdover into kLocking
+    ptp.InjectSyncMessage(2'100'005'000ULL, 2'100'000'000ULL, 0LL);
+    EXPECT_EQ(ptp.GetSyncState(), SyncState::kLocking);
+}

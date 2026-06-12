@@ -1,0 +1,18 @@
+# norxs Deterministic TSN Zonal Backbone — canonical formatting
+# Matches the existing codebase style (Allman braces, 4-space indent,
+# aligned trailing comments, 100-column limit).
+Language: Cpp
+Standard: c++14
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+BreakBeforeBraces: Allman
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveDeclarations: Consecutive
+AlignTrailingComments: true
+PointerAlignment: Left
+SpacesBeforeTrailingComments: 2
+IncludeBlocks: Preserve
+SortIncludes: Never

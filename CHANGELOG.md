@@ -11,6 +11,134 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.1.0] — 2026-06-12
+
+### Fixed — Resolves both open observations from v1.0.1
+
+- **OBS-001 (Medium):** The gPTP convergence watchdog could never fire in slave
+  mode before the first sync, because `Tick()` derived time exclusively from the
+  PHC, which is unreadable in `kFreeRun`. The orchestrator now maintains a
+  **PHC-independent monotonic clock** derived from the `Tick()` period contract
+  (`monotonicNs_ += tickPeriodUs × 1000` per tick) and drives the convergence
+  watchdog from it. A slave that never receives Sync now correctly enters
+  `kFault` with `kPtpNotSynchronised` after `ptpConvergenceTimeoutMs`.
+  Regression tests: `OrchTest.Tick_SlaveNeverSyncs_ConvergenceWatchdogEntersFault`,
+  `OrchTest.Tick_GrandmasterLocksBeforeTimeout_NoSpuriousFault`.
+- **OBS-002 (Low):** `ScheduleParams::entryCount` widened `u8` → `u16` so the
+  documented [1, 256] range — and the full SJA1110/88Q5050 GCL SRAM depth — is
+  representable. All iteration variables widened accordingly. **API change**
+  (struct layout) — hence the minor version bump per SemVer.
+  Regression tests: `OrchTest.Init_Full256EntryGcl_PassesPrevalidation`,
+  `OrchTest.Init_EntryCountAboveMax_RejectedAsGclEmpty`.
+
+### Added — kDegraded → kSafeState escalation (previously documented, not implemented)
+
+- The FSM documentation promised `kDegraded → kSafeState` when the ASIL-D
+  deadline can no longer be guaranteed, but no code path ever set
+  `kFaultNcDeadline` — the safe state was unreachable. Implemented: if the
+  hardware-schedule integrity fault (`VerifyHardwareSchedule()` mismatch)
+  **persists while degraded**, the Network Calculus guarantees proven against
+  the validated schedule are void for the operative GCL, so the orchestrator
+  escalates to `kSafeState` with trigger `kDeadlineViolation` and re-applies the
+  TC7-exclusive safe-state schedule on all ports.
+  Tests: `OrchTest.Tick_PersistentGclIntegrityFault_EscalatesToSafeState`,
+  `OrchTest.AuditLog_SafeStateEntry_RecordsDeadlineViolationTrigger`.
+
+### Added — Verification depth
+
+- **Phase 0 configuration validation** in `Init()`: rejects `tickPeriodUs == 0`
+  (would disable the monotonic watchdog) and `schedulePortCount > kMaxSwitchPorts`
+  with `kInvalidArgument`, before any hardware is touched.
+- **5 holdover runtime-path tests** (`PtpTest`): sync-silence → holdover entry,
+  TCXO drift-compensation PHC writes, budget expiry → `kFreeRun` +
+  `kPtpHoldoverExpired`, 10× GM-silence detection, and re-sync recovery —
+  previously a fully uncovered ASIL-D continuity mechanism.
+- **Measured structural coverage (gcov, host):** 96.1% lines overall —
+  PtpClockManager 100.0%, TsnOrchestrator 97.9%, GateControlManager 96.0%,
+  FrerManager 88.5%. Per-module branch data in the test report.
+- Total suite: **113 tests, 113 passing** (GcmTest 26, PtpTest 27, FrerTest 21,
+  OrchTest 39). Report: `docs/test_reports/unit_test_report_v1.1.0.md`.
+
+### Added — Demonstration & tooling
+
+- `examples/zonal_gateway_demo.cpp` + `-DNORXS_BUILD_EXAMPLES=ON` CMake target:
+  runnable end-to-end lifecycle demo (Init → kRunning → fault injection →
+  kDegraded → kSafeState → audit-trail dump) against a simulated switch ASIC.
+- `.github/workflows/codeql.yml` — CodeQL semantic security analysis
+  (push/PR + weekly), per ISO/IEC 18974 §3.1.5.
+- CI Job 8 — Doxygen API documentation build; blocks on undocumented public API;
+  publishes the HTML as a build artifact.
+- `.clang-format` and `.clang-tidy` — local profiles mirroring CI.
+- `.github/CODEOWNERS` — dual review (safety + security) on production code;
+  OSPO ownership of compliance artifacts.
+- `CODE_OF_CONDUCT.md`; `feature_request` issue template with standards-impact
+  checklist; issue `config.yml` routing security reports away from public issues.
+
+### Changed
+
+- Project version 1.0.1 → 1.1.0; SBOM regenerated as
+  `sbom/tsn-zonal-backbone-1.1.0.spdx.json` (CI version-sync gate updated).
+
+---
+
+## [1.0.1] — 2026-06-12
+
+### Fixed
+
+- **DEF-001 (Critical):** `TsnOrchestrator::PrevalidateAllSchedules()` narrowed
+  `kMaxGclEntries` (256) to `u8`, truncating the bound to 0 — every non-empty
+  schedule was rejected with `kGclEmpty` and `Init()` could never succeed. The
+  comparison is now widened to `std::size_t`, matching the correct pattern in
+  `GateControlManager.cpp`. Covered by regression test
+  `OrchTest.Init_ValidConfig_ReturnsOk_StateInitializing`.
+- **DEF-002 (Minor):** `TsnOrchestrator::GetHealthMetrics()` now aggregates
+  per-stream 802.1Qci drop counters as documented (previously always returned 0).
+  Covered by `OrchTest.GetHealthMetrics_AggregatesMacsecAndDropCounters`.
+
+### Added — Verification
+
+- `tests/test_TsnOrchestrator.cpp` — 28 new unit tests for the previously untested
+  master coordinator: 8-phase Init fail-fast semantics, Start/Stop lifecycle,
+  kPtpConverging → kRunning transition (BMCA self-election path), ASIL-D
+  degradation FSM (kRunning → kDegraded on MACsec auth failures; kFault latch),
+  circular audit log content (ISO 26262 §7.4.2), runtime schedule update guards,
+  and consolidated health metrics. Total suite: **97 tests, 97 passing**.
+- `docs/test_reports/unit_test_report_v1.0.1.md` — formal unit test report
+  (environment, per-suite results, defect log, open observations) plus the raw
+  execution log `unit_test_log_v1.0.1.txt`.
+
+### Added — Compliance (OpenChain ISO/IEC 5230 · ISO/IEC 18974 · NIST CSF 2.0)
+
+- `docs/compliance/openchain-iso5230.md` — open source license compliance program
+  documentation (OpenChain self-certification route).
+- `docs/compliance/openchain-iso18974.md` — security assurance program
+  documentation: known-vulnerability detection, intake SLAs, standard practices.
+- `docs/compliance/nist-csf-mapping.md` — NIST CSF 2.0 mapping across all six
+  functions, at both the process layer and the product layer.
+- `sbom/tsn-zonal-backbone-1.0.1.spdx.json` — SPDX 2.3 Software Bill of Materials
+  (zero third-party runtime dependencies; GoogleTest declared test-scope only).
+- `NOTICE` — third-party attribution file; `LICENSES/LicenseRef-norxs-RI-1.0.txt`
+  — REUSE-style license text directory.
+- CI Job 6 — SBOM validation, version-sync check, compliance artifact presence,
+  and a machine-enforced zero-third-party-includes gate on production code.
+- CI Job 7 — cppcheck security static analysis (blocking on errors), complementing
+  clang-tidy `cert-*`/`bugprone-*` (ISO/IEC 18974 §3.1.5).
+- `.github/dependabot.yml` — weekly CI toolchain vulnerability/freshness monitoring.
+- Pull request template extended with an ISO/IEC 5230 / 18974 compliance checklist.
+- `SECURITY.md` extended with the Security Assurance Program section (SBOM link,
+  monitoring, NIST CSF mapping reference).
+
+### Changed
+
+- `README.md`: corrected the test inventory (the structure listing previously
+  described only `test_GateControlManager.cpp` with an inaccurate case count),
+  added the Verification & Test Evidence and Compliance Programs sections, and
+  refreshed badges.
+- `CMakeLists.txt`: project version 1.0.0 → 1.0.1; orchestrator tests added to the
+  `norxs-tsn-tests` target.
+
+---
+
 ## [1.0.0] — 2026-06-02
 
 ### Initial public release — norxs Technology LLC
@@ -154,7 +282,8 @@ Network Calculus. Targets NXP i.MX8X SoC paired with SJA1110 / 88Q5050 switch AS
 
 ### Added — Tests
 
-#### `test_GateControlManager.cpp` — 28 GoogleTest Cases
+#### `test_GateControlManager.cpp` — 26 GoogleTest Cases
+*(count corrected in v1.0.1 — originally misstated as 28; the 1.0.0 release also shipped `test_PtpClockManager.cpp` (22 cases) and `test_FrerManager.cpp` (21 cases), omitted from this entry)*
 - `MockSwitchHal` with failure injection (`failApplyGcl`, `failReadOperGcl`, `reportSwapPending`)
 - Full MC/DC coverage on all 7 validation stages
 - Guard band boundary conditions: exact minimum, below minimum, above minimum

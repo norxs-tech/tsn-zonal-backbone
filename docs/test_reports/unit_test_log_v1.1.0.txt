@@ -1,0 +1,229 @@
+[==========] Running 113 tests.
+[ RUN      ] FrerTest.Init_ClearsStreamCount
+[       OK ] FrerTest.Init_ClearsStreamCount (3 us)
+[ RUN      ] FrerTest.DoubleInit_ReturnsOk
+[       OK ] FrerTest.DoubleInit_ReturnsOk (0 us)
+[ RUN      ] FrerTest.RegisterStream_ValidEntry_IncreasesCount
+[       OK ] FrerTest.RegisterStream_ValidEntry_IncreasesCount (0 us)
+[ RUN      ] FrerTest.RegisterStream_MultipleStreams_AllTracked
+[       OK ] FrerTest.RegisterStream_MultipleStreams_AllTracked (0 us)
+[ RUN      ] FrerTest.RegisterStream_TableFull_ReturnsFrerTableFull
+[       OK ] FrerTest.RegisterStream_TableFull_ReturnsFrerTableFull (1 us)
+[ RUN      ] FrerTest.RegisterStream_HalFails_ReturnsHalError
+[       OK ] FrerTest.RegisterStream_HalFails_ReturnsHalError (0 us)
+[ RUN      ] FrerTest.DeregisterStream_ExistingStream_DecreasesCount
+[       OK ] FrerTest.DeregisterStream_ExistingStream_DecreasesCount (0 us)
+[ RUN      ] FrerTest.DeregisterStream_UnknownHandle_ReturnsError
+[       OK ] FrerTest.DeregisterStream_UnknownHandle_ReturnsError (0 us)
+[ RUN      ] FrerTest.DeregisterStream_MiddleEntry_ArrayCompacted
+[       OK ] FrerTest.DeregisterStream_MiddleEntry_ArrayCompacted (0 us)
+[ RUN      ] FrerTest.OnFrameReceived_FirstCopy_ForwardedTrue
+[       OK ] FrerTest.OnFrameReceived_FirstCopy_ForwardedTrue (0 us)
+[ RUN      ] FrerTest.OnFrameReceived_Duplicate_ForwardedFalse
+[       OK ] FrerTest.OnFrameReceived_Duplicate_ForwardedFalse (0 us)
+[ RUN      ] FrerTest.OnFrameReceived_Duplicate_IncrementsDuplicateCounter
+[       OK ] FrerTest.OnFrameReceived_Duplicate_IncrementsDuplicateCounter (0 us)
+[ RUN      ] FrerTest.OnFrameReceived_SequentialFrames_AllAccepted
+[       OK ] FrerTest.OnFrameReceived_SequentialFrames_AllAccepted (0 us)
+[ RUN      ] FrerTest.OnFrameReceived_UnknownStream_ReturnsError
+[       OK ] FrerTest.OnFrameReceived_UnknownStream_ReturnsError (0 us)
+[ RUN      ] FrerTest.OnFrameReceived_SeqNumModulo32_DetectedAsDuplicate
+[       OK ] FrerTest.OnFrameReceived_SeqNumModulo32_DetectedAsDuplicate (0 us)
+[ RUN      ] FrerTest.GetPathHealth_AfterRegistration_AllPathsHealthy
+[       OK ] FrerTest.GetPathHealth_AfterRegistration_AllPathsHealthy (0 us)
+[ RUN      ] FrerTest.GetPathHealth_UnknownStream_ReturnsError
+[       OK ] FrerTest.GetPathHealth_UnknownStream_ReturnsError (0 us)
+[ RUN      ] FrerTest.GetStreamStats_UnknownStream_ReturnsError
+[       OK ] FrerTest.GetStreamStats_UnknownStream_ReturnsError (0 us)
+[ RUN      ] FrerTest.Tick_NoStreams_ReturnsOk
+[       OK ] FrerTest.Tick_NoStreams_ReturnsOk (0 us)
+[ RUN      ] FrerTest.Tick_StreamWithNoFrames_ReturnsOk
+[       OK ] FrerTest.Tick_StreamWithNoFrames_ReturnsOk (0 us)
+[ RUN      ] FrerTest.BeforeInit_Tick_ReturnsNotInitialised
+[       OK ] FrerTest.BeforeInit_Tick_ReturnsNotInitialised (0 us)
+[ RUN      ] GcmTest.Stage1_EmptyGcl_ReturnsGclEmpty
+[       OK ] GcmTest.Stage1_EmptyGcl_ReturnsGclEmpty (0 us)
+[ RUN      ] GcmTest.Stage1_MaxEntries_Accepted
+[       OK ] GcmTest.Stage1_MaxEntries_Accepted (0 us)
+[ RUN      ] GcmTest.Stage2_CycleTimeTooShort_Rejected
+[       OK ] GcmTest.Stage2_CycleTimeTooShort_Rejected (0 us)
+[ RUN      ] GcmTest.Stage2_CycleTimeAtMinimum_PassesStage2
+[       OK ] GcmTest.Stage2_CycleTimeAtMinimum_PassesStage2 (0 us)
+[ RUN      ] GcmTest.Stage3_ZeroIntervalEntry_Rejected
+[       OK ] GcmTest.Stage3_ZeroIntervalEntry_Rejected (0 us)
+[ RUN      ] GcmTest.Stage4_SumMismatch_Rejected
+[       OK ] GcmTest.Stage4_SumMismatch_Rejected (0 us)
+[ RUN      ] GcmTest.Stage4_SumExact_PassesStage4
+[       OK ] GcmTest.Stage4_SumExact_PassesStage4 (0 us)
+[ RUN      ] GcmTest.Stage5_TC7WindowTooNarrow_GuardBandViolation
+[       OK ] GcmTest.Stage5_TC7WindowTooNarrow_GuardBandViolation (0 us)
+[ RUN      ] GcmTest.Stage5_TC7WindowExactlyMinimum_PassesStage5
+[       OK ] GcmTest.Stage5_TC7WindowExactlyMinimum_PassesStage5 (0 us)
+[ RUN      ] GcmTest.Stage6_NoExclusiveTC7Window_Rejected
+[       OK ] GcmTest.Stage6_NoExclusiveTC7Window_Rejected (0 us)
+[ RUN      ] GcmTest.Stage6_ExactlyOneExclusiveWindow_Passes
+[       OK ] GcmTest.Stage6_ExactlyOneExclusiveWindow_Passes (0 us)
+[ RUN      ] GcmTest.Stage7_ValidSchedule_DeadlineMet
+[       OK ] GcmTest.Stage7_ValidSchedule_DeadlineMet (0 us)
+[ RUN      ] GcmTest.Stage7_NCResult_Available_AfterApply
+[       OK ] GcmTest.Stage7_NCResult_Available_AfterApply (0 us)
+[ RUN      ] GcmTest.Stage7_NCResult_NotAvailable_BeforeApply
+[       OK ] GcmTest.Stage7_NCResult_NotAvailable_BeforeApply (0 us)
+[ RUN      ] GcmTest.ValidSchedule_CallsHalApplyOnce
+[       OK ] GcmTest.ValidSchedule_CallsHalApplyOnce (0 us)
+[ RUN      ] GcmTest.HalFailure_DoesNotUpdateActiveSchedule
+[       OK ] GcmTest.HalFailure_DoesNotUpdateActiveSchedule (0 us)
+[ RUN      ] GcmTest.ValidationFailure_DoesNotCallHal
+[       OK ] GcmTest.ValidationFailure_DoesNotCallHal (0 us)
+[ RUN      ] GcmTest.GetActiveSchedule_BeforeApply_ReturnsNotInitialised
+[       OK ] GcmTest.GetActiveSchedule_BeforeApply_ReturnsNotInitialised (0 us)
+[ RUN      ] GcmTest.GetActiveSchedule_AfterApply_ReturnsCopy
+[       OK ] GcmTest.GetActiveSchedule_AfterApply_ReturnsCopy (0 us)
+[ RUN      ] GcmTest.DisableSchedule_ClearsActiveFlag
+[       OK ] GcmTest.DisableSchedule_ClearsActiveFlag (0 us)
+[ RUN      ] GcmTest.VerifyHardwareSchedule_MatchingHW_ReturnsOk
+[       OK ] GcmTest.VerifyHardwareSchedule_MatchingHW_ReturnsOk (0 us)
+[ RUN      ] GcmTest.VerifyHardwareSchedule_HalReadFails_ReturnsError
+[       OK ] GcmTest.VerifyHardwareSchedule_HalReadFails_ReturnsError (0 us)
+[ RUN      ] GcmTest.VerifyHardwareSchedule_BeforeApply_NotInitialised
+[       OK ] GcmTest.VerifyHardwareSchedule_BeforeApply_NotInitialised (0 us)
+[ RUN      ] GcmTest.GetPort_ReturnsConstructedPort
+[       OK ] GcmTest.GetPort_ReturnsConstructedPort (0 us)
+[ RUN      ] GcmTest.SecondGcm_OnPort5_ReportsCorrectPort
+[       OK ] GcmTest.SecondGcm_OnPort5_ReportsCorrectPort (0 us)
+[ RUN      ] GcmTest.ApplySchedule_Twice_SecondScheduleActive
+[       OK ] GcmTest.ApplySchedule_Twice_SecondScheduleActive (1 us)
+[ RUN      ] PtpTest.Init_ValidConfig_ReturnsOk
+[       OK ] PtpTest.Init_ValidConfig_ReturnsOk (0 us)
+[ RUN      ] PtpTest.Init_ZeroPortCount_ReturnsInvalidArgument
+[       OK ] PtpTest.Init_ZeroPortCount_ReturnsInvalidArgument (0 us)
+[ RUN      ] PtpTest.Init_TooManyPorts_ReturnsInvalidArgument
+[       OK ] PtpTest.Init_TooManyPorts_ReturnsInvalidArgument (0 us)
+[ RUN      ] PtpTest.Init_WritesZeroAdjustmentToPhc
+[       OK ] PtpTest.Init_WritesZeroAdjustmentToPhc (0 us)
+[ RUN      ] PtpTest.BeforeInit_GetCurrentTime_ReturnsNotInitialised
+[       OK ] PtpTest.BeforeInit_GetCurrentTime_ReturnsNotInitialised (0 us)
+[ RUN      ] PtpTest.AfterInit_SyncState_IsFreeRun
+[       OK ] PtpTest.AfterInit_SyncState_IsFreeRun (0 us)
+[ RUN      ] PtpTest.AfterInit_IsSynchronised_IsFalse
+[       OK ] PtpTest.AfterInit_IsSynchronised_IsFalse (0 us)
+[ RUN      ] PtpTest.AfterInit_ClockRole_IsSlave
+[       OK ] PtpTest.AfterInit_ClockRole_IsSlave (0 us)
+[ RUN      ] PtpTest.InjectSync_SmallOffset_TransitionsToLocking
+[       OK ] PtpTest.InjectSync_SmallOffset_TransitionsToLocking (0 us)
+[ RUN      ] PtpTest.InjectSync_OffsetWithinTarget_TransitionsToLocked
+[       OK ] PtpTest.InjectSync_OffsetWithinTarget_TransitionsToLocked (0 us)
+[ RUN      ] PtpTest.InjectSync_WritesPhcAdjustment
+[       OK ] PtpTest.InjectSync_WritesPhcAdjustment (0 us)
+[ RUN      ] PtpTest.InjectSync_LargeOffset_AdjustmentClamped
+[       OK ] PtpTest.InjectSync_LargeOffset_AdjustmentClamped (0 us)
+[ RUN      ] PtpTest.InjectSync_CorrectOffsetCalculation
+[       OK ] PtpTest.InjectSync_CorrectOffsetCalculation (0 us)
+[ RUN      ] PtpTest.ForceGrandmaster_SetsRoleAndLockedState
+[       OK ] PtpTest.ForceGrandmaster_SetsRoleAndLockedState (0 us)
+[ RUN      ] PtpTest.GetGrandmasterIdentity_BeforeElection_ReturnsBmcaNoGm
+[       OK ] PtpTest.GetGrandmasterIdentity_BeforeElection_ReturnsBmcaNoGm (0 us)
+[ RUN      ] PtpTest.ForceGrandmaster_GetGrandmasterIdentity_ReturnsOk
+[       OK ] PtpTest.ForceGrandmaster_GetGrandmasterIdentity_ReturnsOk (0 us)
+[ RUN      ] PtpTest.HoldoverRemaining_WhenNotInHoldover_ReturnsZero
+[       OK ] PtpTest.HoldoverRemaining_WhenNotInHoldover_ReturnsZero (0 us)
+[ RUN      ] PtpTest.GetCurrentTime_WhenLocked_ReturnsOk
+[       OK ] PtpTest.GetCurrentTime_WhenLocked_ReturnsOk (0 us)
+[ RUN      ] PtpTest.GetCurrentTime_WhenFreeRun_ReturnsNotSynchronised
+[       OK ] PtpTest.GetCurrentTime_WhenFreeRun_ReturnsNotSynchronised (0 us)
+[ RUN      ] PtpTest.Tick_BeforeInit_ReturnsNotInitialised
+[       OK ] PtpTest.Tick_BeforeInit_ReturnsNotInitialised (0 us)
+[ RUN      ] PtpTest.Tick_AfterInit_ReturnsOk
+[       OK ] PtpTest.Tick_AfterInit_ReturnsOk (0 us)
+[ RUN      ] PtpTest.GetMeanPathDelay_InitiallyZero
+[       OK ] PtpTest.GetMeanPathDelay_InitiallyZero (0 us)
+[ RUN      ] PtpTest.Tick_SyncSilenceBeyondTimeout_EntersHoldover
+[       OK ] PtpTest.Tick_SyncSilenceBeyondTimeout_EntersHoldover (0 us)
+[ RUN      ] PtpTest.Tick_InHoldover_AppliesDriftCompensationWrite
+[       OK ] PtpTest.Tick_InHoldover_AppliesDriftCompensationWrite (0 us)
+[ RUN      ] PtpTest.Tick_HoldoverBudgetExpired_FreeRunWithError
+[       OK ] PtpTest.Tick_HoldoverBudgetExpired_FreeRunWithError (0 us)
+[ RUN      ] PtpTest.Tick_HoldoverGmSilenceTenfoldTimeout_ReportsExpired
+[       OK ] PtpTest.Tick_HoldoverGmSilenceTenfoldTimeout_ReportsExpired (0 us)
+[ RUN      ] PtpTest.Tick_ReSyncDuringHoldover_RecoversTowardsLock
+[       OK ] PtpTest.Tick_ReSyncDuringHoldover_RecoversTowardsLock (0 us)
+[ RUN      ] OrchTest.Constructor_InitialState_Uninitialized
+[       OK ] OrchTest.Constructor_InitialState_Uninitialized (52 us)
+[ RUN      ] OrchTest.Constructor_AuditLog_Empty
+[       OK ] OrchTest.Constructor_AuditLog_Empty (5 us)
+[ RUN      ] OrchTest.Init_ValidConfig_ReturnsOk_StateInitializing
+[       OK ] OrchTest.Init_ValidConfig_ReturnsOk_StateInitializing (19 us)
+[ RUN      ] OrchTest.Init_ConfiguresVlanAndStreamFilters
+[       OK ] OrchTest.Init_ConfiguresVlanAndStreamFilters (7 us)
+[ RUN      ] OrchTest.Init_HalChipFailure_Propagates_StateUnchanged
+[       OK ] OrchTest.Init_HalChipFailure_Propagates_StateUnchanged (7 us)
+[ RUN      ] OrchTest.Init_VlanFailure_FailsFast_NoStreamFiltersTouched
+[       OK ] OrchTest.Init_VlanFailure_FailsFast_NoStreamFiltersTouched (7 us)
+[ RUN      ] OrchTest.Init_EmptySchedule_FailsPrevalidation_NoGclApplied
+[       OK ] OrchTest.Init_EmptySchedule_FailsPrevalidation_NoGclApplied (7 us)
+[ RUN      ] OrchTest.Init_IntervalSumMismatch_FailsPrevalidation
+[       OK ] OrchTest.Init_IntervalSumMismatch_FailsPrevalidation (7 us)
+[ RUN      ] OrchTest.Init_MissingSafetyWindow_FailsPrevalidation
+[       OK ] OrchTest.Init_MissingSafetyWindow_FailsPrevalidation (7 us)
+[ RUN      ] OrchTest.Start_BeforeInit_ReturnsNotInitialised
+[       OK ] OrchTest.Start_BeforeInit_ReturnsNotInitialised (4 us)
+[ RUN      ] OrchTest.Start_AfterInit_EntersPtpConverging
+[       OK ] OrchTest.Start_AfterInit_EntersPtpConverging (8 us)
+[ RUN      ] OrchTest.Stop_FromRunning_DisablesAndReturnsToUninitialized
+[       OK ] OrchTest.Stop_FromRunning_DisablesAndReturnsToUninitialized (9 us)
+[ RUN      ] OrchTest.Tick_BeforeInit_ReturnsNotInitialised
+[       OK ] OrchTest.Tick_BeforeInit_ReturnsNotInitialised (4 us)
+[ RUN      ] OrchTest.Tick_GrandmasterSelfElection_ReachesRunning
+[       OK ] OrchTest.Tick_GrandmasterSelfElection_ReachesRunning (8 us)
+[ RUN      ] OrchTest.Tick_ReachesRunning_AppliesGclOnAllScheduledPorts
+[       OK ] OrchTest.Tick_ReachesRunning_AppliesGclOnAllScheduledPorts (7 us)
+[ RUN      ] OrchTest.Tick_ReachesRunning_RegistersFrerStreams
+[       OK ] OrchTest.Tick_ReachesRunning_RegistersFrerStreams (7 us)
+[ RUN      ] OrchTest.Tick_GclApplyFailsDuringConvergence_EntersFault
+[       OK ] OrchTest.Tick_GclApplyFailsDuringConvergence_EntersFault (8 us)
+[ RUN      ] OrchTest.Tick_InFaultState_ReturnsOperationNotPermitted
+[       OK ] OrchTest.Tick_InFaultState_ReturnsOperationNotPermitted (7 us)
+[ RUN      ] OrchTest.Tick_MacsecAuthFailures_DegradesToDegraded
+[       OK ] OrchTest.Tick_MacsecAuthFailures_DegradesToDegraded (8 us)
+[ RUN      ] OrchTest.Tick_NoFaults_RemainsRunning
+[       OK ] OrchTest.Tick_NoFaults_RemainsRunning (8 us)
+[ RUN      ] OrchTest.AuditLog_RecordsTransitionToRunning
+[       OK ] OrchTest.AuditLog_RecordsTransitionToRunning (8 us)
+[ RUN      ] OrchTest.AuditLog_RecordsDegradationWithTriggerCode
+[       OK ] OrchTest.AuditLog_RecordsDegradationWithTriggerCode (8 us)
+[ RUN      ] OrchTest.UpdatePortSchedule_NotRunning_ReturnsOperationNotPermitted
+[       OK ] OrchTest.UpdatePortSchedule_NotRunning_ReturnsOperationNotPermitted (7 us)
+[ RUN      ] OrchTest.UpdatePortSchedule_RunningValidSchedule_AppliesGcl
+[       OK ] OrchTest.UpdatePortSchedule_RunningValidSchedule_AppliesGcl (8 us)
+[ RUN      ] OrchTest.UpdatePortSchedule_UnmanagedPort_ReturnsPortOutOfRange
+[       OK ] OrchTest.UpdatePortSchedule_UnmanagedPort_ReturnsPortOutOfRange (9 us)
+[ RUN      ] OrchTest.GetGateControlManager_ManagedPort_ReturnsManager
+[       OK ] OrchTest.GetGateControlManager_ManagedPort_ReturnsManager (8 us)
+[ RUN      ] OrchTest.GetGateControlManager_UnmanagedPort_ReturnsError
+[       OK ] OrchTest.GetGateControlManager_UnmanagedPort_ReturnsError (7 us)
+[ RUN      ] OrchTest.GetHealthMetrics_AggregatesMacsecAndDropCounters
+[       OK ] OrchTest.GetHealthMetrics_AggregatesMacsecAndDropCounters (8 us)
+[ RUN      ] OrchTest.Tick_SlaveNeverSyncs_ConvergenceWatchdogEntersFault
+[       OK ] OrchTest.Tick_SlaveNeverSyncs_ConvergenceWatchdogEntersFault (8 us)
+[ RUN      ] OrchTest.Tick_GrandmasterLocksBeforeTimeout_NoSpuriousFault
+[       OK ] OrchTest.Tick_GrandmasterLocksBeforeTimeout_NoSpuriousFault (8 us)
+[ RUN      ] OrchTest.Init_Full256EntryGcl_PassesPrevalidation
+[       OK ] OrchTest.Init_Full256EntryGcl_PassesPrevalidation (7 us)
+[ RUN      ] OrchTest.Init_EntryCountAboveMax_RejectedAsGclEmpty
+[       OK ] OrchTest.Init_EntryCountAboveMax_RejectedAsGclEmpty (7 us)
+[ RUN      ] OrchTest.Init_ZeroTickPeriod_ReturnsInvalidArgument
+[       OK ] OrchTest.Init_ZeroTickPeriod_ReturnsInvalidArgument (5 us)
+[ RUN      ] OrchTest.Init_PortCountAboveMax_ReturnsInvalidArgument
+[       OK ] OrchTest.Init_PortCountAboveMax_ReturnsInvalidArgument (6 us)
+[ RUN      ] OrchTest.Tick_PersistentGclIntegrityFault_EscalatesToSafeState
+[       OK ] OrchTest.Tick_PersistentGclIntegrityFault_EscalatesToSafeState (9 us)
+[ RUN      ] OrchTest.AuditLog_SafeStateEntry_RecordsDeadlineViolationTrigger
+[       OK ] OrchTest.AuditLog_SafeStateEntry_RecordsDeadlineViolationTrigger (8 us)
+[ RUN      ] OrchTest.Init_CycleTimeTooShort_FailsPrevalidation
+[       OK ] OrchTest.Init_CycleTimeTooShort_FailsPrevalidation (7 us)
+[ RUN      ] OrchTest.Init_ZeroIntervalEntry_FailsPrevalidation
+[       OK ] OrchTest.Init_ZeroIntervalEntry_FailsPrevalidation (7 us)
+[ RUN      ] OrchTest.SubManagerAccessors_ReflectRunningSystemState
+[       OK ] OrchTest.SubManagerAccessors_ReflectRunningSystemState (7 us)
+[==========] 113 tests ran. (0 ms total)
+[  PASSED  ] 113 tests.

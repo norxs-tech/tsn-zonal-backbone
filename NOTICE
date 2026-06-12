@@ -1,0 +1,30 @@
+norxs Deterministic TSN Zonal Backbone
+Copyright (c) 2026 norxs Technology LLC. All rights reserved.
+
+Licensed under the norxs Reference Implementation License v1.0.
+See LICENSE / LICENSES/LicenseRef-norxs-RI-1.0.txt for terms.
+Commercial use requires a separate license agreement: contact@norxs.com
+
+────────────────────────────────────────────────────────────────────────
+THIRD-PARTY COMPONENTS
+────────────────────────────────────────────────────────────────────────
+
+The distributed production library (norxs-tsn-backbone) contains NO
+third-party code. The components below are build-time / test-time tools
+only and are never linked into, or shipped with, the deliverable:
+
+  • GoogleTest (>= 1.13) — BSD-3-Clause
+    Copyright 2008, Google Inc.
+    https://github.com/google/googletest
+    Used only by the optional norxs-tsn-tests host binary
+    (-DNORXS_BUILD_TESTS=ON).
+
+A machine-readable inventory is maintained in SPDX 2.3 format:
+  sbom/tsn-zonal-backbone-1.1.0.spdx.json
+
+────────────────────────────────────────────────────────────────────────
+CONTACT
+────────────────────────────────────────────────────────────────────────
+
+License / open source compliance inquiries:  contact@norxs.com  [OSPO]
+Security vulnerability reports:              see SECURITY.md    [SECURITY]

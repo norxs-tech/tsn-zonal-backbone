@@ -21,7 +21,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(norxs-tsn-zonal-backbone
-        VERSION      1.0.0
+        VERSION      1.1.0
         DESCRIPTION  "Deterministic TSN Zonal Backbone — norxs Technology LLC"
         LANGUAGES    CXX
 )
@@ -33,6 +33,7 @@ project(norxs-tsn-zonal-backbone
 option(NORXS_BUILD_TESTS      "Build GoogleTest unit test suite"     OFF)
 option(NORXS_ENABLE_COVERAGE  "Enable gcov/lcov coverage (host only)" OFF)
 option(NORXS_STRICT_WARNINGS  "Treat all warnings as errors"          ON)
+option(NORXS_BUILD_EXAMPLES   "Build host demo executables"           OFF)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # C++14 Standard  (AUTOSAR C++14 — no later extensions)
@@ -93,7 +94,7 @@ target_compile_options(norxs-tsn-backbone PRIVATE ${NORXS_COMPILE_FLAGS})
 target_compile_definitions(norxs-tsn-backbone
     PRIVATE
         NORXS_TSN_VERSION_MAJOR=1
-        NORXS_TSN_VERSION_MINOR=0
+        NORXS_TSN_VERSION_MINOR=1
         NORXS_TSN_VERSION_PATCH=0
 )
 
@@ -109,6 +110,7 @@ if(NORXS_BUILD_TESTS)
         tests/test_GateControlManager.cpp
         tests/test_PtpClockManager.cpp
         tests/test_FrerManager.cpp
+        tests/test_TsnOrchestrator.cpp
     )
 
     target_link_libraries(norxs-tsn-tests
@@ -130,6 +132,18 @@ if(NORXS_BUILD_TESTS)
     gtest_discover_tests(norxs-tsn-tests
         TEST_SUFFIX     "_norxs"
         DISCOVERY_TIMEOUT 30
+    )
+endif()
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Examples (host-only demos; not part of the target deliverable)
+# ─────────────────────────────────────────────────────────────────────────────
+
+if(NORXS_BUILD_EXAMPLES)
+    add_executable(zonal-gateway-demo examples/zonal_gateway_demo.cpp)
+    target_link_libraries(zonal-gateway-demo PRIVATE norxs-tsn-backbone)
+    target_compile_options(zonal-gateway-demo PRIVATE
+        -Wall -Wextra -fno-exceptions -fno-rtti
     )
 endif()
 

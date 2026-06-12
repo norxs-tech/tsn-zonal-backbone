@@ -8,6 +8,10 @@
 [![Standard](https://img.shields.io/badge/standard-IEEE%20802.1Qbv%20%7C%20802.1CB%20%7C%20802.1Qci%20%7C%20802.1AE-green)]()
 [![Safety](https://img.shields.io/badge/safety-ISO%2026262%20ASIL--D-red)]()
 [![Cybersecurity](https://img.shields.io/badge/cybersecurity-UN%20R155%20%7C%20ISO%2021434-orange)]()
+[![OpenChain](https://img.shields.io/badge/OpenChain-ISO%2FIEC%205230%20%7C%20ISO%2FIEC%2018974-blueviolet)](docs/compliance/)
+[![NIST CSF](https://img.shields.io/badge/NIST-CSF%202.0%20mapped-9cf)](docs/compliance/nist-csf-mapping.md)
+[![Tests](https://img.shields.io/badge/unit%20tests-113%2F113%20passing-brightgreen)](docs/test_reports/unit_test_report_v1.1.0.md)
+[![Coverage](https://img.shields.io/badge/line%20coverage-96.1%25-brightgreen)](docs/test_reports/unit_test_report_v1.1.0.md)
 
 ---
 
@@ -209,6 +213,19 @@ lcov --capture --directory build-cov -o coverage.info
 genhtml coverage.info --output-directory coverage-report
 ```
 
+### Run the lifecycle demo
+
+```bash
+cmake -B build-demo -DNORXS_BUILD_EXAMPLES=ON
+cmake --build build-demo --target zonal-gateway-demo
+./build-demo/zonal-gateway-demo
+```
+
+Walks the full ASIL-D lifecycle against a simulated switch ASIC: 8-phase `Init()`,
+gPTP convergence to `kRunning`, hardware-GCL fault injection → `kDegraded`,
+persistent-fault escalation → `kSafeState` (TC7-exclusive schedule), and an
+ISO 26262 §7.4.2 audit-trail dump.
+
 ---
 
 ## Repository Structure
@@ -227,22 +244,83 @@ tsn-zonal-backbone/
 │   ├── PtpClockManager.cpp      PI servo + BMCA + holdover
 │   ├── FrerManager.cpp          Duplicate detection + LED
 │   └── TsnOrchestrator.cpp      125 µs loop + state machine
-├── tests/
-│   └── test_GateControlManager.cpp   28 GoogleTest cases (MC/DC coverage)
+├── tests/                        113 GoogleTest cases total (MC/DC on decision points)
+│   ├── test_GateControlManager.cpp   26 cases — 7-stage pipeline, NC, guard bands
+│   ├── test_PtpClockManager.cpp      27 cases — PI servo, BMCA, holdover runtime path
+│   ├── test_FrerManager.cpp          21 cases — dup elimination, LED, path health
+│   └── test_TsnOrchestrator.cpp      39 cases — Init fail-fast, degradation FSM,
+│                                     SafeState escalation, watchdog, audit log
+├── examples/
+│   └── zonal_gateway_demo.cpp    Runnable lifecycle demo (Init → kRunning →
+│                                 fault injection → kDegraded → kSafeState)
 ├── docs/
-│   └── architecture.md          Deep-dive architecture documentation
+│   ├── architecture.md           Deep-dive architecture documentation
+│   ├── safety_case_summary.md    ASIL-D hazard analysis & SSR allocation
+│   ├── compliance/
+│   │   ├── openchain-iso5230.md     OpenChain ISO/IEC 5230 license compliance program
+│   │   ├── openchain-iso18974.md    OpenChain ISO/IEC 18974 security assurance program
+│   │   └── nist-csf-mapping.md      NIST CSF 2.0 function/category mapping
+│   └── test_reports/
+│       ├── unit_test_report_v1.1.0.md   Formal unit test report (113/113, 96.1% cov)
+│       └── unit_test_log_v1.1.0.txt     Raw execution log
+├── sbom/
+│   └── tsn-zonal-backbone-1.1.0.spdx.json   SPDX 2.3 Software Bill of Materials
+├── LICENSES/
+│   └── LicenseRef-norxs-RI-1.0.txt   REUSE-style license text directory
 ├── cmake/
 │   └── Toolchain-aarch64-imx8x.cmake  NXP i.MX8X cross-compilation
 ├── .github/
-│   ├── workflows/ci.yml          5-job CI pipeline
-│   └── ISSUE_TEMPLATE/
-│       └── bug_report.md
+│   ├── workflows/ci.yml          8-job CI pipeline (build, cross, stack, lint,
+│   │                             AUTOSAR scan, SBOM/license, security, docs)
+│   ├── workflows/codeql.yml      CodeQL semantic security analysis (weekly + PR)
+│   ├── dependabot.yml            CI toolchain vulnerability monitoring
+│   ├── CODEOWNERS                Dual-review ownership (safety + security)
+│   ├── PULL_REQUEST_TEMPLATE.md  AUTOSAR + compliance checklists
+│   └── ISSUE_TEMPLATE/           bug_report · feature_request · config
+├── .clang-format / .clang-tidy   Local tooling profiles (mirror CI)
 ├── CMakeLists.txt
+├── CODE_OF_CONDUCT.md
 ├── LICENSE
+├── NOTICE                        Third-party attributions (ISO/IEC 5230 §3.3.2)
+├── SECURITY.md                   Coordinated disclosure + ISO/IEC 18974 program
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 └── README.md
 ```
+
+---
+
+## Verification & Test Evidence
+
+| Evidence | Location | Result |
+|----------|----------|--------|
+| Unit test report (formal) | [`docs/test_reports/unit_test_report_v1.1.0.md`](docs/test_reports/unit_test_report_v1.1.0.md) | **113/113 PASS** |
+| Measured line coverage (gcov) | same report, §3 | **96.1%** overall (PtpClockManager 100%) |
+| Raw test execution log | [`docs/test_reports/unit_test_log_v1.1.0.txt`](docs/test_reports/unit_test_log_v1.1.0.txt) | archived per release |
+| Strict-warning build | CI Job 1 (`-Werror -Wall -Wextra -Wconversion -Wshadow`) | 0 warnings |
+| Stack bound ≤ 1024 B/function | CI Job 3 (ISO 26262 Part 6 §9.4.3) | enforced |
+| AUTOSAR pattern gate | CI Job 5 | enforced |
+
+Test suites: `GcmTest` (26), `PtpTest` (27), `FrerTest` (21), `OrchTest` (39).
+Each suite isolates the unit under test with a failure-injecting `MockSwitchHal`;
+no test touches hardware, network, or filesystem. On-target verification, measured
+MC/DC structural coverage, and tool qualification records are part of the
+commercial safety evidence package.
+
+---
+
+## Open Source & Security Compliance Programs
+
+| Program | Standard | Documentation |
+|---------|----------|---------------|
+| License compliance | **OpenChain ISO/IEC 5230:2020** (self-certification) | [`docs/compliance/openchain-iso5230.md`](docs/compliance/openchain-iso5230.md) |
+| Security assurance | **OpenChain ISO/IEC 18974:2023** (self-certification) | [`docs/compliance/openchain-iso18974.md`](docs/compliance/openchain-iso18974.md) |
+| Cybersecurity framework | **NIST CSF 2.0** mapping (process + product layers) | [`docs/compliance/nist-csf-mapping.md`](docs/compliance/nist-csf-mapping.md) |
+
+Supporting artifacts: SPDX 2.3 **SBOM** ([`sbom/`](sbom/)) validated in CI ·
+[`NOTICE`](NOTICE) attributions · SPDX headers on every file (CI-enforced) ·
+zero third-party runtime dependencies (CI-enforced) · Dependabot toolchain
+monitoring · cppcheck + clang-tidy `cert-*` security scanning on every push.
 
 ---
 

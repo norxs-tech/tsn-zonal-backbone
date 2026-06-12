@@ -1,0 +1,14 @@
+# norxs — local clang-tidy profile (mirrors CI Job 4)
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  cppcoreguidelines-*,
+  performance-*,
+  readability-*,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -readability-magic-numbers,
+  -cppcoreguidelines-avoid-magic-numbers
+WarningsAsErrors: 'bugprone-use-after-move,cert-err34-c'
+HeaderFilterRegex: 'include/norxs/tsn/.*'
+FormatStyle: file

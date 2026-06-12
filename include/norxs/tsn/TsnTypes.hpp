@@ -303,7 +303,7 @@ struct ScheduleParams
     u64              cycleTimeNs;                         ///< Repeating period [ns]
     PtpTimestamp     baseTime;                            ///< Absolute PTP cycle start
     u32              maxSafetyFrameSizeBytes;             ///< Largest expected TC7 frame
-    u8               entryCount;                          ///< Valid GCL entries [1, 256]
+    u16              entryCount;                          ///< Valid GCL entries [1, 256]
     std::array<GclEntry, kMaxGclEntries> gcl;            ///< Gate Control List
 };
 

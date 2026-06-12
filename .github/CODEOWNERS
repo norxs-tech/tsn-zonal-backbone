@@ -1,0 +1,19 @@
+# norxs Deterministic TSN Zonal Backbone — code ownership
+# Reviews from the owning team are mandatory on protected branches.
+
+# Default: safety engineering team owns everything
+*                       @norxs-tech/safety-engineering
+
+# Safety-critical production code: dual review (safety + security)
+/src/                   @norxs-tech/safety-engineering @norxs-tech/product-security
+/include/               @norxs-tech/safety-engineering @norxs-tech/product-security
+
+# Compliance & security artifacts: OSPO / PSO ownership
+/sbom/                  @norxs-tech/ospo
+/LICENSES/              @norxs-tech/ospo
+/NOTICE                 @norxs-tech/ospo
+/SECURITY.md            @norxs-tech/product-security
+/docs/compliance/       @norxs-tech/ospo @norxs-tech/product-security
+
+# CI pipeline changes require release engineering sign-off
+/.github/               @norxs-tech/release-engineering
