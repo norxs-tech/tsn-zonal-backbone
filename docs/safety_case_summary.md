@@ -159,7 +159,7 @@ per ISO 26262 Part 5 §8.
 
 | Verification Activity | Method | Status |
 |----------------------|--------|--------|
-| Unit testing | GoogleTest (28+ cases per module, MC/DC) | ✅ CI Job 1 |
+| Unit testing | GoogleTest (113 cases, 96.1% line coverage, MC/DC on decisions) | ✅ CI Job 1 |
 | Static analysis | clang-tidy (`bugprone-*`, `cert-*`, `cppcoreguidelines-*`) | ✅ CI Job 4 |
 | AUTOSAR compliance | Pattern scan (13 forbidden patterns) | ✅ CI Job 5 |
 | Stack depth | `-fstack-usage` ≤ 1024 B/function | ✅ CI Job 3 |

@@ -33,6 +33,7 @@ namespace tsn {
 // FRER State Machine States  (IEEE 802.1CB §7.4.3)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// @brief Per-stream sequence recovery state (IEEE 802.1CB §7.4.3).
 enum class FrerRecoveryState : u8
 {
     kPassRecovering = 0U,  ///< Normal: receiving frames, discarding duplicates

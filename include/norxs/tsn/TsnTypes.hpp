@@ -33,12 +33,12 @@ namespace tsn {
 // §1  Platform Integer Aliases
 // ─────────────────────────────────────────────────────────────────────────────
 
-using u8  = std::uint8_t;
-using u16 = std::uint16_t;
-using u32 = std::uint32_t;
-using u64 = std::uint64_t;
-using i32 = std::int32_t;
-using i64 = std::int64_t;
+using u8  = std::uint8_t;   ///< Unsigned  8-bit integer (AUTOSAR A3-9-1)
+using u16 = std::uint16_t;  ///< Unsigned 16-bit integer (AUTOSAR A3-9-1)
+using u32 = std::uint32_t;  ///< Unsigned 32-bit integer (AUTOSAR A3-9-1)
+using u64 = std::uint64_t;  ///< Unsigned 64-bit integer (AUTOSAR A3-9-1)
+using i32 = std::int32_t;   ///< Signed   32-bit integer (AUTOSAR A3-9-1)
+using i64 = std::int64_t;   ///< Signed   64-bit integer (AUTOSAR A3-9-1)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // §2  IEEE 802.1Qbv / TSN Dimensional Constants
@@ -198,6 +198,12 @@ enum class ErrorCode : u32
 // §6  Result<T,E> — Exception-free error monad  (AUTOSAR M15-3-1 exempt)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// @brief Exception-free Result monad carrying either a value of type @p T or
+///        an error of type @p E (default: ErrorCode). Replaces C++ exceptions
+///        per AUTOSAR M15-3-1; the Rust-style `?` operator is provided by the
+///        TSN_RETURN_IF_ERR macro.
+/// @tparam T  Success payload type.
+/// @tparam E  Error type (an enum with a zero "no error" default).
 template <typename T, typename E = ErrorCode>
 struct Result final
 {
@@ -215,6 +221,9 @@ private:
     E    error_ { E{} };
 };
 
+/// @brief Specialisation of Result for operations with no success payload
+///        (the common `Status` case): carries only ok/error state.
+/// @tparam E  Error type.
 template <typename E>
 struct Result<void, E> final
 {
@@ -356,6 +365,8 @@ struct StreamFilterInstance
 // §14  System State Snapshot  (used by TsnOrchestrator for diagnostics)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// @brief Top-level lifecycle / degradation state of the TSN orchestrator
+///        (ASIL-D FSM; transitions recorded in the audit log per §7.4.2).
 enum class OrchestratorState : u8
 {
     kUninitialized   = 0U,
@@ -368,6 +379,7 @@ enum class OrchestratorState : u8
     kFault           = 7U,  ///< Unrecoverable fault, requires reset
 };
 
+/// @brief gPTP clock role of this node after BMCA evaluation (IEEE 802.1AS).
 enum class ClockRole : u8
 {
     kGrandmaster = 0U,
@@ -375,6 +387,7 @@ enum class ClockRole : u8
     kSlave       = 2U,
 };
 
+/// @brief gPTP synchronisation lock state of the local PHC.
 enum class SyncState : u8
 {
     kFreeRun  = 0U,  ///< No synchronisation

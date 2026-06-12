@@ -17,6 +17,11 @@ jobs:
   analyze:
     name: "CodeQL (C/C++)"
     runs-on: ubuntu-22.04
+    # CodeQL SARIF upload requires GitHub Advanced Security on PRIVATE repos
+    # and fails the run otherwise ("Advanced Security must be enabled...").
+    # Public repos get CodeQL for free. Skip cleanly when the repo is private —
+    # enable GHAS and remove this guard to scan private forks.
+    if: ${{ !github.event.repository.private }}
     permissions:
       security-events: write
       contents: read

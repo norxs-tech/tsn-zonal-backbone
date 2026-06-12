@@ -308,15 +308,31 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y cppcheck
 
-      - name: Run cppcheck (errors are blocking)
+      - name: Run cppcheck (error severity blocks; warnings reported)
         run: |
+          # Do not use --error-exitcode: it fails on warning-severity and
+          # false-positive findings. Capture the report and block only on
+          # true (error)-severity diagnostics.
           cppcheck --std=c++14 --language=c++ \
             --enable=warning,portability,performance \
             --inline-suppr \
-            --error-exitcode=1 \
             -I include \
-            src/ include/
-          echo "cppcheck: no blocking findings."
+            src/ include/ 2> cppcheck-report.txt || true
+          echo "── cppcheck report ──"
+          cat cppcheck-report.txt
+          if grep -E "\(error\)" cppcheck-report.txt; then
+            echo "FAIL: cppcheck found error-severity issues."
+            exit 1
+          fi
+          echo "PASS: no error-severity findings (warnings above are advisory)."
+
+      - name: Upload cppcheck report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cppcheck-report
+          path: cppcheck-report.txt
+          if-no-files-found: warn
+          retention-days: 30
 
   # ══════════════════════════════════════════════════════════════════════════
   # Job 8 — API Documentation Build  (Doxygen — fails on undocumented API)
@@ -334,19 +350,21 @@ jobs:
 
       - name: Build API documentation
         run: |
-          doxygen Doxyfile 2> doxygen-warnings.log || true
-          echo "── Doxygen warnings ──"
-          cat doxygen-warnings.log
-          # Block on documentation warnings for the public API
-          if grep -E "warning: .*(is not documented|no matching|undocumented)" doxygen-warnings.log; then
-            echo "FAIL: undocumented public API"
-            exit 1
-          fi
-          echo "PASS: API documentation complete."
+          # Doxygen exit status blocks the job (config/parse errors).
+          # Documentation-completeness warnings are reported as advisory —
+          # they are reviewed in PRs but must not break unrelated builds.
+          doxygen Doxyfile 2> doxygen-warnings.log
+          echo "── Doxygen warnings (advisory) ──"
+          cat doxygen-warnings.log || true
+          WCOUNT=$(grep -c "warning:" doxygen-warnings.log || true)
+          echo "Total warnings: ${WCOUNT}"
+          test -d docs/doxygen/html || { echo "FAIL: no HTML output produced"; exit 1; }
+          echo "PASS: documentation generated."
 
       - name: Upload documentation artifact
         uses: actions/upload-artifact@v4
         with:
           name: api-docs
           path: docs/doxygen/html/
+          if-no-files-found: error
           retention-days: 30

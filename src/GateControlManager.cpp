@@ -63,6 +63,7 @@ GateControlManager::GateControlManager(u8 port, SwitchHal& hal) noexcept
     , hal_            { hal   }
     , scheduleActive_ { false }
     , activeSchedule_ {}
+    , verifyBuffer_   {}
     , lastNcResult_   {}
     , ncResultValid_  { false }
 {

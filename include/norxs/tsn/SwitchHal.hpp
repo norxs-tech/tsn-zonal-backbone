@@ -33,8 +33,8 @@ namespace tsn {
 // Register address and data types
 // ─────────────────────────────────────────────────────────────────────────────
 
-using RegAddr = u32;
-using RegData = u32;
+using RegAddr = u32;  ///< Switch-ASIC register address (MDIO/SPI/PCIe plane)
+using RegData = u32;  ///< Switch-ASIC register data word
 
 /// @brief Port index sentinel for chip-global registers (not port-specific).
 static constexpr u8 kGlobalPort = 0xFFU;

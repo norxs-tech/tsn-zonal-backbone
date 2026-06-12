@@ -204,17 +204,34 @@ Status PtpClockManager::InjectSyncMessage(u64 rxTimestampNs,
 // PI Servo — integer scaled
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// @brief Portable arithmetic (sign-extending, floor) right shift for i64.
+///
+///        In C++14, right-shifting a negative signed value is
+///        implementation-defined (resolved only in C++20) — flagged by
+///        cppcheck [shiftNegativeLHS] and MISRA C++:2008 Rule 5-8-1 territory.
+///        This helper reproduces the arithmetic-shift result exactly using
+///        well-defined unsigned operations: for v < 0,
+///        ~((~v) >> s) sign-extends, matching floor(v / 2^s).
+static i64 ArithmeticShiftRight(i64 value, i64 shift) noexcept
+{
+    if (value >= 0)
+    {
+        return static_cast<i64>(static_cast<u64>(value) >> shift);
+    }
+    return static_cast<i64>(~((~static_cast<u64>(value)) >> shift));
+}
+
 i64 PtpClockManager::RunServo(i64 offsetNs) noexcept
 {
-    // Proportional term: offset >> 2
-    const i64 proportional = offsetNs >> kKpShift;
+    // Proportional term: offset / 2^kKpShift (arithmetic shift, portable)
+    const i64 proportional = ArithmeticShiftRight(offsetNs, kKpShift);
 
     // Integral accumulation with anti-windup clamp
     integral_ += offsetNs;
     if (integral_ >  kIntegralClamp) { integral_ =  kIntegralClamp; }
     if (integral_ < -kIntegralClamp) { integral_ = -kIntegralClamp; }
 
-    const i64 integralTerm = integral_ >> kKiShift;
+    const i64 integralTerm = ArithmeticShiftRight(integral_, kKiShift);
 
     // Total adjustment (negated: positive offset → slow down clock)
     i64 adjustment = -(proportional + integralTerm);
