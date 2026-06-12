@@ -327,7 +327,7 @@ jobs:
           echo "PASS: no error-severity findings (warnings above are advisory)."
 
       - name: Upload cppcheck report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cppcheck-report
           path: cppcheck-report.txt
@@ -362,7 +362,7 @@ jobs:
           echo "PASS: documentation generated."
 
       - name: Upload documentation artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-docs
           path: docs/doxygen/html/
